@@ -817,5 +817,120 @@ function escapeHtml(str){
   const d = document.createElement('div'); d.textContent = str||''; return d.innerHTML;
 }
 </script>
+
+
+
+
+<script type="module">
+import { getApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const app = getApp();
+const auth = getAuth(app);
+const db = getDatabase(app);
+
+function fileToCompressedBase64Fix(file, maxWidth=700, quality=0.55){
+  return new Promise((resolve, reject)=>{
+    if(!file){ resolve(null); return; }
+    if(!file.type.startsWith('image/')){ reject(new Error("Le fichier n'est pas une image.")); return; }
+    const reader = new FileReader();
+    reader.onload = (e)=>{
+      const img = new Image();
+      img.onload = ()=>{
+        const scale = Math.min(1, maxWidth / img.width);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width*scale);
+        canvas.height = Math.round(img.height*scale);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = ()=>reject(new Error("Impossible de lire cette image."));
+      img.src = e.target.result;
+    };
+    reader.onerror = ()=>reject(new Error("Impossible de lire le fichier."));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function sendClientMessageFix(activeOrderId){
+  const currentUser = auth.currentUser;
+  if(!activeOrderId || !currentUser) return;
+  const textEl = document.getElementById('msg-text');
+  const imgEl = document.getElementById('msg-image');
+  const sendBtn = document.getElementById('btn-send-msg');
+  const text = textEl.value.trim();
+  const file = imgEl.files[0];
+  if(!text && !file) return;
+
+  sendBtn.disabled = true;
+  const originalLabel = sendBtn.textContent;
+  sendBtn.textContent = 'Envoi...';
+
+  try{
+    let imageBase64 = null;
+    if(file){
+      imageBase64 = await fileToCompressedBase64Fix(file, 700, 0.55);
+      if(imageBase64 && imageBase64.length > 1500000){
+        throw new Error("Image trop lourde même après compression. Essaie une image plus petite.");
+      }
+    }
+
+    await push(ref(db, 'messages/'+activeOrderId), {
+      senderUid: currentUser.uid,
+      senderName: currentUser.displayName || currentUser.email,
+      role: 'client',
+      text: text || null,
+      imageBase64: imageBase64 || null,
+      timestamp: Date.now()
+    });
+
+    textEl.value=''; imgEl.value='';
+  }catch(e){
+    console.error("Erreur envoi message:", e);
+    alert("L'envoi a échoué : " + (e.message || "erreur inconnue"));
+  }finally{
+    sendBtn.disabled = false;
+    sendBtn.textContent = originalLabel;
+  }
+}
+
+// On remplace le bouton par un clone pour supprimer l'ancien listener
+// (qui utilisait l'ancienne fonction sans gestion d'erreur), puis on
+// rebranche notre nouvelle version dessus.
+const oldBtn = document.getElementById('btn-send-msg');
+const newBtn = oldBtn.cloneNode(true);
+oldBtn.parentNode.replaceChild(newBtn, oldBtn);
+newBtn.addEventListener('click', ()=>{
+  // on lit l'ID de commande actif à partir de la modale ouverte
+  const modal = document.getElementById('order-modal');
+  const orderIdFromDom = modal?.dataset?.activeOrderId
+    || window.__activeOrderIdFix
+    || null;
+  sendClientMessageFix(orderIdFromDom);
+});
+
+// on observe l'ouverture de la modale pour capter l'ID de commande active
+document.addEventListener('click', (e)=>{
+  const card = e.target.closest('.order-card');
+  if(card && card.dataset.id){
+    window.__activeOrderIdFix = card.dataset.id;
+  }
+});
+
+document.getElementById('msg-text')?.addEventListener('keydown', (e)=>{
+  if(e.key==='Enter'){
+    e.preventDefault();
+    sendClientMessageFix(window.__activeOrderIdFix);
+  }
+});
+</script>
+
+
+
+
+
+  
 </body>
 </html>
