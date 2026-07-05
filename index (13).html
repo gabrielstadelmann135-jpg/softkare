@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>softkale — Miniatures YouTube sur mesure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#ffffff;
+    --ink:#0b0b0c;
+    --ink-soft:#5b5f66;
+    --ink-faint:#9497a0;
+    --line:#e7e7ea;
+    --accent:#1f9d55;
+    --accent-dark:#167a41;
+    --accent-soft:#e7f7ee;
+    --surface:#f7f7f8;
+    --danger:#c0392b;
+    --radius:14px;
+    --radius-sm:8px;
+    --shadow: 0 1px 2px rgba(0,0,0,.04), 0 12px 28px rgba(0,0,0,.06);
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:var(--font-body); -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.brand{font-family:var(--font-display); letter-spacing:-0.02em;}
+  a{color:inherit; text-decoration:none;}
+  button{font-family:var(--font-body); cursor:pointer;}
+  ::selection{background:var(--accent); color:#fff;}
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+
+  .kale-mark{width:22px; height:22px; flex-shrink:0;}
+  .kale-mark path{fill:var(--ink);}
+
+  /* ---------- layout shells ---------- */
+  .wrap{max-width:1080px; margin:0 auto; padding:0 24px;}
+  header.site{
+    position:sticky; top:0; z-index:50; background:rgba(255,255,255,.85);
+    backdrop-filter:blur(10px); border-bottom:1px solid var(--line);
+  }
+  .nav{display:flex; align-items:center; justify-content:space-between; height:72px;}
+  .brand{display:flex; align-items:center; gap:10px; font-weight:700; font-size:20px;}
+  .nav-links{display:flex; align-items:center; gap:28px; font-weight:500; font-size:15px; color:var(--ink-soft);}
+  .nav-links button.link{background:none; border:none; color:inherit; font-size:15px; font-weight:500; padding:0;}
+  .nav-links button.link.active, .nav-links button.link:hover{color:var(--ink);}
+  .nav-right{display:flex; align-items:center; gap:12px;}
+
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    border-radius:999px; border:1px solid transparent; font-weight:600; font-size:14px;
+    padding:11px 20px; transition:transform .15s ease, background .15s ease, border-color .15s ease;
+  }
+  .btn:active{transform:scale(.97);}
+  .btn-primary{background:var(--ink); color:#fff;}
+  .btn-primary:hover{background:#000;}
+  .btn-accent{background:var(--accent); color:#fff;}
+  .btn-accent:hover{background:var(--accent-dark);}
+  .btn-ghost{background:transparent; color:var(--ink); border-color:var(--line);}
+  .btn-ghost:hover{border-color:var(--ink);}
+  .btn-sm{padding:8px 14px; font-size:13px;}
+  .btn[disabled]{opacity:.5; cursor:not-allowed;}
+  .btn-block{width:100%;}
+
+  main{display:none;}
+  main.active{display:block;}
+
+  /* ---------- HOME ---------- */
+  .hero{padding:96px 0 72px; border-bottom:1px solid var(--line);}
+  .hero-grid{display:grid; grid-template-columns:1.15fr .85fr; gap:56px; align-items:center;}
+  .eyebrow{display:inline-flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:var(--accent-dark); background:var(--accent-soft); padding:6px 12px; border-radius:999px; margin-bottom:22px;}
+  .hero h1{font-size:52px; line-height:1.05; margin:0 0 20px; font-weight:700;}
+  .hero p.lead{font-size:18px; line-height:1.6; color:var(--ink-soft); max-width:46ch; margin:0 0 32px;}
+  .hero-actions{display:flex; gap:14px;}
+  .hero-visual{position:relative; aspect-ratio:16/10; border-radius:20px; background:var(--surface); border:1px solid var(--line); overflow:hidden; display:flex; align-items:center; justify-content:center;}
+  .hero-visual svg{width:70%; height:70%;}
+
+  .stats-row{display:flex; gap:48px; margin-top:48px; padding-top:32px; border-top:1px solid var(--line);}
+  .stat b{display:block; font-family:var(--font-display); font-size:28px;}
+  .stat span{font-size:13px; color:var(--ink-soft);}
+
+  .section{padding:80px 0;}
+  .section-head{max-width:640px; margin:0 auto 48px; text-align:center;}
+  .section-head h2{font-size:34px; margin:0 0 12px;}
+  .section-head p{color:var(--ink-soft); font-size:16px; line-height:1.6; margin:0;}
+
+  .steps{display:grid; grid-template-columns:repeat(3,1fr); gap:28px;}
+  .step{border:1px solid var(--line); border-radius:var(--radius); padding:28px;}
+  .step .num{font-family:var(--font-display); font-size:14px; color:var(--accent-dark); font-weight:700; margin-bottom:14px; display:block;}
+  .step h3{font-size:18px; margin:0 0 8px;}
+  .step p{color:var(--ink-soft); font-size:14px; line-height:1.6; margin:0;}
+
+  .pricing-card{max-width:520px; margin:0 auto; border:1px solid var(--line); border-radius:var(--radius); padding:36px; text-align:center; box-shadow:var(--shadow);}
+  .pricing-card h3{font-size:20px; margin:0 0 10px;}
+  .pricing-card p{color:var(--ink-soft); font-size:15px; line-height:1.6;}
+
+  .reviews-preview{display:grid; grid-template-columns:repeat(3,1fr); gap:20px;}
+  footer.site{border-top:1px solid var(--line); padding:32px 0; color:var(--ink-faint); font-size:13px; display:flex; justify-content:space-between;}
+
+  /* ---------- AUTH ---------- */
+  .auth-shell{min-height:calc(100vh - 72px); display:flex; align-items:center; justify-content:center; padding:60px 24px;}
+  .auth-card{width:100%; max-width:400px; border:1px solid var(--line); border-radius:var(--radius); padding:36px; box-shadow:var(--shadow);}
+  .auth-card h2{font-size:24px; margin:0 0 6px;}
+  .auth-card p.sub{color:var(--ink-soft); font-size:14px; margin:0 0 26px;}
+  .field{margin-bottom:16px;}
+  .field label{display:block; font-size:13px; font-weight:600; margin-bottom:6px;}
+  .field input, .field textarea, .field select{
+    width:100%; border:1px solid var(--line); border-radius:var(--radius-sm); padding:11px 13px;
+    font-size:14px; font-family:var(--font-body); background:#fff; color:var(--ink);
+  }
+  .field input:focus, .field textarea:focus, .field select:focus{border-color:var(--ink);}
+  .field textarea{resize:vertical; min-height:90px;}
+  .auth-divider{display:flex; align-items:center; gap:12px; margin:20px 0; color:var(--ink-faint); font-size:12px;}
+  .auth-divider::before, .auth-divider::after{content:""; flex:1; height:1px; background:var(--line);}
+  .google-btn{display:flex; align-items:center; justify-content:center; gap:10px; width:100%; border:1px solid var(--line); border-radius:999px; padding:11px; background:#fff; font-weight:600; font-size:14px;}
+  .google-btn:hover{border-color:var(--ink);}
+  .switch-line{text-align:center; margin-top:20px; font-size:13px; color:var(--ink-soft);}
+  .switch-line button{background:none; border:none; color:var(--accent-dark); font-weight:600; font-size:13px;}
+  .form-error{background:#fdecea; color:var(--danger); border-radius:var(--radius-sm); padding:10px 12px; font-size:13px; margin-bottom:14px; display:none;}
+  .form-error.show{display:block;}
+
+  /* ---------- DASHBOARD ---------- */
+  .dash{padding:40px 0 100px;}
+  .dash-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:28px;}
+  .dash-head h1{font-size:26px; margin:0;}
+  .dash-tabs{display:flex; gap:8px; margin-bottom:28px; border-bottom:1px solid var(--line);}
+  .dash-tab{background:none; border:none; padding:10px 4px; margin-right:24px; font-size:14px; font-weight:600; color:var(--ink-faint); border-bottom:2px solid transparent; margin-bottom:-1px;}
+  .dash-tab.active{color:var(--ink); border-bottom-color:var(--ink);}
+  .dash-panel{display:none;}
+  .dash-panel.active{display:block;}
+
+  .order-form{border:1px solid var(--line); border-radius:var(--radius); padding:28px; margin-bottom:36px; max-width:640px;}
+  .order-form h3{margin:0 0 4px; font-size:18px;}
+  .order-form p.hint{color:var(--ink-soft); font-size:13px; margin:0 0 20px;}
+
+  .order-list{display:flex; flex-direction:column; gap:12px;}
+  .order-card{border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; display:flex; align-items:center; justify-content:space-between; gap:16px; cursor:pointer; transition:border-color .15s;}
+  .order-card:hover{border-color:var(--ink);}
+  .order-card .oc-left{min-width:0;}
+  .order-card h4{margin:0 0 4px; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .order-card .oc-meta{font-size:12px; color:var(--ink-faint);}
+  .order-card .oc-right{display:flex; align-items:center; gap:14px; flex-shrink:0;}
+  .badge{font-size:11px; font-weight:700; padding:5px 10px; border-radius:999px; white-space:nowrap;}
+  .badge.pending{background:#fff4e0; color:#9a6b00;}
+  .badge.priced{background:#e8f0ff; color:#1d4ed8;}
+  .badge.paid{background:var(--accent-soft); color:var(--accent-dark);}
+  .badge.progress{background:#f1e8ff; color:#7c3aed;}
+  .badge.done{background:#eafaf0; color:var(--accent-dark);}
+  .price-tag{font-family:var(--font-display); font-weight:700; font-size:15px;}
+  .empty-state{border:1px dashed var(--line); border-radius:var(--radius); padding:48px; text-align:center; color:var(--ink-soft);}
+
+  /* order detail / messaging modal */
+  .modal-overlay{position:fixed; inset:0; background:rgba(10,10,11,.5); display:none; align-items:center; justify-content:center; z-index:100; padding:20px;}
+  .modal-overlay.show{display:flex;}
+  .modal{background:#fff; border-radius:var(--radius); width:100%; max-width:560px; max-height:86vh; display:flex; flex-direction:column; box-shadow:var(--shadow);}
+  .modal-head{display:flex; align-items:center; justify-content:space-between; padding:18px 22px; border-bottom:1px solid var(--line);}
+  .modal-head h3{margin:0; font-size:16px;}
+  .modal-head .close-btn{background:none; border:none; font-size:20px; color:var(--ink-faint); line-height:1;}
+  .modal-body{padding:18px 22px; overflow-y:auto; flex:1;}
+  .modal-order-meta{display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; font-size:13px; color:var(--ink-soft);}
+  .pay-box{border:1px solid var(--accent); background:var(--accent-soft); border-radius:var(--radius-sm); padding:14px 16px; margin-bottom:18px;}
+  .pay-box .amount{font-family:var(--font-display); font-size:22px; font-weight:700; margin-bottom:8px;}
+  #paypal-btn-container{max-width:320px;}
+  .thread{display:flex; flex-direction:column; gap:10px;}
+  .msg{max-width:78%; padding:10px 13px; border-radius:14px; font-size:14px; line-height:1.5;}
+  .msg img{max-width:100%; border-radius:8px; display:block; margin-top:6px;}
+  .msg .time{display:block; font-size:10px; opacity:.6; margin-top:4px;}
+  .msg.me{background:var(--ink); color:#fff; align-self:flex-end; border-bottom-right-radius:4px;}
+  .msg.them{background:var(--surface); align-self:flex-start; border-bottom-left-radius:4px;}
+  .modal-footer{padding:14px 22px; border-top:1px solid var(--line); display:flex; gap:8px; align-items:center;}
+  .modal-footer input[type=text]{flex:1; border:1px solid var(--line); border-radius:999px; padding:10px 16px; font-size:14px;}
+  .attach-btn{background:var(--surface); border:1px solid var(--line); border-radius:999px; width:38px; height:38px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+
+  /* ---------- REVIEWS ---------- */
+  .reviews-page{padding:56px 0 100px;}
+  .reviews-head{display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:36px; flex-wrap:wrap; gap:16px;}
+  .reviews-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:20px;}
+  .review-card{border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
+  .review-card img{width:100%; aspect-ratio:16/9; object-fit:cover; display:block; background:var(--surface);}
+  .review-body{padding:16px 18px;}
+  .review-stars{color:var(--accent); font-size:13px; margin-bottom:6px;}
+  .review-body p{font-size:13px; color:var(--ink-soft); line-height:1.5; margin:0 0 8px;}
+  .review-author{font-size:12px; font-weight:600;}
+
+  .review-form-card{border:1px solid var(--line); border-radius:var(--radius); padding:26px; max-width:520px; margin:0 0 40px;}
+
+  @media(max-width:860px){
+    .hero-grid{grid-template-columns:1fr;}
+    .hero h1{font-size:36px;}
+    .steps{grid-template-columns:1fr;}
+    .reviews-grid, .reviews-preview{grid-template-columns:1fr 1fr;}
+    .nav-links{display:none;}
+  }
+  @media(max-width:560px){
+    .reviews-grid, .reviews-preview{grid-template-columns:1fr;}
+    .stats-row{gap:26px; flex-wrap:wrap;}
+  }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap nav">
+    <div class="brand">
+      <svg class="kale-mark" viewBox="0 0 100 100"><path d="M85 15H45C28 15 15 28 15 45c0 6 5 11 11 11s11-5 11-11c0-4.4 3.6-8 8-8h40L45 85H15L85 15z"/></svg>
+      softkale
+    </div>
+    <nav class="nav-links">
+      <button class="link" data-nav="home">Accueil</button>
+      <button class="link" data-nav="reviews">Avis</button>
+      <button class="link" data-nav="dashboard" id="nav-dashboard">Tableau de bord</button>
+    </nav>
+    <div class="nav-right" id="nav-auth-area">
+      <button class="btn btn-ghost btn-sm" data-nav="auth" data-mode="login">Se connecter</button>
+      <button class="btn btn-primary btn-sm" data-nav="auth" data-mode="signup">Créer un compte</button>
+    </div>
+  </div>
+</header>
+
+<!-- ============ HOME ============ -->
+<main id="view-home" class="active">
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <span class="eyebrow">Miniatures YouTube faites par des humains</span>
+        <h1>Des miniatures qui donnent envie de cliquer.</h1>
+        <p class="lead">Décris ta vidéo, discute du style avec nous par message, reçois ta miniature finale directement dans ta messagerie. Simple, rapide, sur mesure.</p>
+        <div class="hero-actions">
+          <button class="btn btn-accent" data-nav="auth" data-mode="signup">Commencer une demande</button>
+          <button class="btn btn-ghost" data-nav="reviews">Voir les avis</button>
+        </div>
+        <div class="stats-row">
+          <div class="stat"><b id="stat-orders">—</b><span>miniatures livrées</span></div>
+          <div class="stat"><b id="stat-rating">—</b><span>note moyenne</span></div>
+          <div class="stat"><b>24-48h</b><span>délai moyen</span></div>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <svg viewBox="0 0 100 100"><path fill="#0b0b0c" d="M85 15H45C28 15 15 28 15 45c0 6 5 11 11 11s11-5 11-11c0-4.4 3.6-8 8-8h40L45 85H15L85 15z"/></svg>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Comment ça marche</h2>
+        <p>Trois étapes, du brief à la miniature livrée dans ta conversation.</p>
+      </div>
+      <div class="steps">
+        <div class="step"><span class="num">01</span><h3>Tu envoies ta demande</h3><p>Titre, description de la vidéo, style souhaité. Tu peux joindre une image de référence.</p></div>
+        <div class="step"><span class="num">02</span><h3>On discute et on fixe le prix</h3><p>On échange par message dans ton tableau de bord, le prix est annoncé selon la demande.</p></div>
+        <div class="step"><span class="num">03</span><h3>Tu payes, tu reçois</h3><p>Paiement sécurisé par PayPal, puis la miniature finale t'est envoyée directement dans le fil de messages.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="background:var(--surface); border-top:1px solid var(--line); border-bottom:1px solid var(--line);">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Tarif</h2>
+        <p>Chaque vidéo est différente — le prix est proposé au cas par cas dans la messagerie, avant tout paiement.</p>
+      </div>
+      <div class="pricing-card">
+        <h3>Devis personnalisé</h3>
+        <p>Envoie ta demande gratuitement. Le prix t'est communiqué par message avant que tu payes quoi que ce soit — aucune surprise.</p>
+        <button class="btn btn-accent" style="margin-top:16px;" data-nav="auth" data-mode="signup">Faire une demande</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Ils nous ont fait confiance</h2>
+        <p>De vrais avis, avec les miniatures réellement livrées.</p>
+      </div>
+      <div class="reviews-preview" id="home-reviews-preview"></div>
+    </div>
+  </section>
+</main>
+
+<!-- ============ AUTH ============ -->
+<main id="view-auth">
+  <div class="auth-shell">
+    <div class="auth-card">
+      <div id="auth-error" class="form-error"></div>
+
+      <div id="auth-login">
+        <h2>Content de te revoir</h2>
+        <p class="sub">Connecte-toi pour suivre tes demandes.</p>
+        <div class="field"><label>Email</label><input type="email" id="login-email" placeholder="toi@exemple.com"></div>
+        <div class="field"><label>Mot de passe</label><input type="password" id="login-password" placeholder="••••••••"></div>
+        <button class="btn btn-primary btn-block" id="btn-login">Se connecter</button>
+        <div class="auth-divider">ou</div>
+        <button class="google-btn" id="btn-google-login">
+          <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.4 29.3 35 24 35c-6.1 0-11-4.9-11-11s4.9-11 11-11c2.8 0 5.3 1 7.3 2.7l6-6C33.5 6.5 29 4.5 24 4.5 12.9 4.5 4 13.4 4 24.5s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-4z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 16 18.9 13.5 24 13.5c2.8 0 5.3 1 7.3 2.7l6-6C33.5 6.5 29 4.5 24 4.5c-7.6 0-14.1 4.3-17.7 10.2z"/><path fill="#4CAF50" d="M24 44.5c5.2 0 9.9-2 13.4-5.2l-6.2-5.2c-2 1.4-4.6 2.4-7.2 2.4-5.3 0-9.7-2.6-11.3-7.4l-6.5 5C9.8 40.1 16.4 44.5 24 44.5z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.3 5.6l6.2 5.2C40.6 36 44 30.8 44 24.5c0-1.3-.1-2.7-.4-4z"/></svg>
+          Continuer avec Google
+        </button>
+        <p class="switch-line">Pas encore de compte ? <button id="to-signup">Créer un compte</button></p>
+      </div>
+
+      <div id="auth-signup" style="display:none;">
+        <h2>Créer ton compte</h2>
+        <p class="sub">Gratuit, ça prend 30 secondes.</p>
+        <div class="field"><label>Nom</label><input type="text" id="signup-name" placeholder="Ton nom"></div>
+        <div class="field"><label>Email</label><input type="email" id="signup-email" placeholder="toi@exemple.com"></div>
+        <div class="field"><label>Mot de passe</label><input type="password" id="signup-password" placeholder="6 caractères minimum"></div>
+        <button class="btn btn-primary btn-block" id="btn-signup">Créer mon compte</button>
+        <div class="auth-divider">ou</div>
+        <button class="google-btn" id="btn-google-signup">
+          <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.4 29.3 35 24 35c-6.1 0-11-4.9-11-11s4.9-11 11-11c2.8 0 5.3 1 7.3 2.7l6-6C33.5 6.5 29 4.5 24 4.5 12.9 4.5 4 13.4 4 24.5s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-4z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 16 18.9 13.5 24 13.5c2.8 0 5.3 1 7.3 2.7l6-6C33.5 6.5 29 4.5 24 4.5c-7.6 0-14.1 4.3-17.7 10.2z"/><path fill="#4CAF50" d="M24 44.5c5.2 0 9.9-2 13.4-5.2l-6.2-5.2c-2 1.4-4.6 2.4-7.2 2.4-5.3 0-9.7-2.6-11.3-7.4l-6.5 5C9.8 40.1 16.4 44.5 24 44.5z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.3 5.6l6.2 5.2C40.6 36 44 30.8 44 24.5c0-1.3-.1-2.7-.4-4z"/></svg>
+          Continuer avec Google
+        </button>
+        <p class="switch-line">Déjà un compte ? <button id="to-login">Se connecter</button></p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ============ DASHBOARD ============ -->
+<main id="view-dashboard">
+  <div class="wrap dash">
+    <div class="dash-head">
+      <h1>Ton tableau de bord</h1>
+      <button class="btn btn-ghost btn-sm" id="btn-logout">Se déconnecter</button>
+    </div>
+    <div class="dash-tabs">
+      <button class="dash-tab active" data-tab="new">Nouvelle demande</button>
+      <button class="dash-tab" data-tab="orders">Mes demandes</button>
+    </div>
+
+    <div class="dash-panel active" id="tab-new">
+      <div class="order-form">
+        <h3>Décris ta miniature</h3>
+        <p class="hint">Sois précis : plus on comprend ta vidéo, meilleure sera la miniature.</p>
+        <div id="order-error" class="form-error"></div>
+        <div class="field"><label>Titre de la vidéo</label><input type="text" id="order-title" placeholder="Ex : J'ai testé le pire PC gaming à 50€"></div>
+        <div class="field"><label>Description / style souhaité</label><textarea id="order-desc" placeholder="Ambiance, couleurs, texte à faire apparaître, inspirations..."></textarea></div>
+        <div class="field"><label>Image de référence (optionnelle)</label><input type="file" id="order-image" accept="image/*"></div>
+        <button class="btn btn-accent btn-block" id="btn-create-order">Envoyer ma demande</button>
+      </div>
+    </div>
+
+    <div class="dash-panel" id="tab-orders">
+      <div class="order-list" id="order-list"></div>
+    </div>
+  </div>
+</main>
+
+<!-- ============ REVIEWS ============ -->
+<main id="view-reviews">
+  <div class="wrap reviews-page">
+    <div class="reviews-head">
+      <div>
+        <h1 style="font-size:28px; margin:0 0 6px;">Avis clients</h1>
+        <p style="color:var(--ink-soft); margin:0;">Des résultats réels, envoyés par nos clients.</p>
+      </div>
+      <button class="btn btn-primary btn-sm" id="btn-open-review-form">Laisser un avis</button>
+    </div>
+
+    <div class="review-form-card" id="review-form-card" style="display:none;">
+      <h3 style="margin-top:0;">Partage ta miniature</h3>
+      <div id="review-error" class="form-error"></div>
+      <div class="field"><label>Note</label>
+        <select id="review-rating">
+          <option value="5">5 — Excellent</option>
+          <option value="4">4 — Très bien</option>
+          <option value="3">3 — Correct</option>
+          <option value="2">2 — Décevant</option>
+          <option value="1">1 — Mauvais</option>
+        </select>
+      </div>
+      <div class="field"><label>Ton commentaire</label><textarea id="review-comment" placeholder="Qu'as-tu pensé du résultat ?"></textarea></div>
+      <div class="field"><label>Image de la miniature reçue</label><input type="file" id="review-image" accept="image/*"></div>
+      <button class="btn btn-accent btn-block" id="btn-submit-review">Publier mon avis</button>
+    </div>
+
+    <div class="reviews-grid" id="reviews-grid"></div>
+  </div>
+</main>
+
+<!-- ============ ORDER / MESSAGING MODAL ============ -->
+<div class="modal-overlay" id="order-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="modal-title">Demande</h3>
+      <button class="close-btn" id="modal-close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-order-meta">
+        <span id="modal-status-badge" class="badge pending">En attente</span>
+        <span id="modal-price"></span>
+      </div>
+      <div id="pay-box" class="pay-box" style="display:none;">
+        <div class="amount" id="pay-amount"></div>
+        <div id="paypal-btn-container"></div>
+      </div>
+      <div class="thread" id="thread"></div>
+    </div>
+    <div class="modal-footer">
+      <label class="attach-btn" title="Joindre une image">
+        📎<input type="file" id="msg-image" accept="image/*" style="display:none;">
+      </label>
+      <input type="text" id="msg-text" placeholder="Écrire un message...">
+      <button class="btn btn-primary btn-sm" id="btn-send-msg">Envoyer</button>
+    </div>
+  </div>
+</div>
+
+<footer class="site">
+  <div class="wrap" style="display:flex; justify-content:space-between; width:100%;">
+    <span>© 2026 softkale</span>
+    <span>Miniatures YouTube faites sur mesure</span>
+  </div>
+</footer>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, updateProfile
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {
+  getDatabase, ref, push, set, get, onValue, query, orderByChild, equalTo, update, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+// ----- Firebase config (softkale) -----
+const firebaseConfig = {
+  apiKey: "AIzaSyD9BX0FmhIcx0_Z2azk6bq07di-r7s0Rqw",
+  authDomain: "softkale-8d0c0.firebaseapp.com",
+  databaseURL: "https://softkale-8d0c0-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "softkale-8d0c0",
+  storageBucket: "softkale-8d0c0.firebasestorage.app",
+  messagingSenderId: "620524095351",
+  appId: "1:620524095351:web:206c85d48cab5e0e378372"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+
+// ----- PayPal : lien PayPal.me personnel, paiement manuel confirmé par l'admin -----
+const PAYPAL_ME_USERNAME = "softkale";
+
+let currentUser = null;
+let currentOrders = {};
+let activeOrderId = null;
+let messagesUnsub = null;
+let userOrdersIndexUnsub = null;
+
+/* ---------------- Navigation ---------------- */
+function showView(name){
+  document.querySelectorAll('main').forEach(m=>m.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  document.querySelectorAll('.nav-links .link').forEach(b=>b.classList.toggle('active', b.dataset.nav===name));
+  window.scrollTo({top:0, behavior:'instant'});
+}
+document.querySelectorAll('[data-nav]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const target = btn.dataset.nav;
+    if(target==='dashboard' && !currentUser){ showAuth('login'); return; }
+    if(target==='auth'){ showAuth(btn.dataset.mode || 'login'); return; }
+    showView(target);
+  });
+});
+function showAuth(mode){
+  showView('auth');
+  document.getElementById('auth-login').style.display = mode==='login' ? 'block':'none';
+  document.getElementById('auth-signup').style.display = mode==='signup' ? 'block':'none';
+  hideAuthError();
+}
+document.getElementById('to-signup').addEventListener('click', ()=>showAuth('signup'));
+document.getElementById('to-login').addEventListener('click', ()=>showAuth('login'));
+
+function showAuthError(msg){
+  const el = document.getElementById('auth-error');
+  el.textContent = msg; el.classList.add('show');
+}
+function hideAuthError(){ document.getElementById('auth-error').classList.remove('show'); }
+
+/* ---------------- Auth actions ---------------- */
+document.getElementById('btn-signup').addEventListener('click', async ()=>{
+  hideAuthError();
+  const name = document.getElementById('signup-name').value.trim();
+  const email = document.getElementById('signup-email').value.trim();
+  const password = document.getElementById('signup-password').value;
+  if(!name || !email || password.length<6){ showAuthError("Remplis tous les champs (mot de passe : 6 caractères min)."); return; }
+  try{
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    await updateProfile(cred.user, { displayName: name });
+    await set(ref(db, 'users/'+cred.user.uid), { name, email, createdAt: Date.now() });
+  }catch(e){ showAuthError(translateAuthError(e)); }
+});
+document.getElementById('btn-login').addEventListener('click', async ()=>{
+  hideAuthError();
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  try{ await signInWithEmailAndPassword(auth, email, password); }
+  catch(e){ showAuthError(translateAuthError(e)); }
+});
+async function googleAuth(){
+  hideAuthError();
+  const provider = new GoogleAuthProvider();
+  try{
+    const cred = await signInWithPopup(auth, provider);
+    const uref = ref(db, 'users/'+cred.user.uid);
+    const snap = await get(uref);
+    if(!snap.exists()){
+      await set(uref, { name: cred.user.displayName || 'Utilisateur', email: cred.user.email, createdAt: Date.now() });
+    }
+  }catch(e){ showAuthError(translateAuthError(e)); }
+}
+document.getElementById('btn-google-login').addEventListener('click', googleAuth);
+document.getElementById('btn-google-signup').addEventListener('click', googleAuth);
+document.getElementById('btn-logout').addEventListener('click', ()=>signOut(auth));
+
+function translateAuthError(e){
+  const code = e.code || '';
+  if(code.includes('email-already-in-use')) return "Cet email est déjà utilisé.";
+  if(code.includes('invalid-credential') || code.includes('wrong-password') || code.includes('user-not-found')) return "Email ou mot de passe incorrect.";
+  if(code.includes('weak-password')) return "Mot de passe trop faible.";
+  if(code.includes('popup-closed')) return "Connexion Google annulée.";
+  return "Une erreur est survenue. Réessaie.";
+}
+
+onAuthStateChanged(auth, (user)=>{
+  currentUser = user;
+  const authArea = document.getElementById('nav-auth-area');
+  if(user){
+    authArea.innerHTML = `<span style="font-size:14px; font-weight:600; margin-right:4px;">${(user.displayName||user.email||'').split(' ')[0]}</span>
+      <button class="btn btn-primary btn-sm" data-nav="dashboard">Tableau de bord</button>`;
+    authArea.querySelector('[data-nav]').addEventListener('click', ()=>showView('dashboard'));
+    listenMyOrders(user.uid);
+    showView('dashboard');
+  } else {
+    authArea.innerHTML = `
+      <button class="btn btn-ghost btn-sm" data-nav="auth" data-mode="login">Se connecter</button>
+      <button class="btn btn-primary btn-sm" data-nav="auth" data-mode="signup">Créer un compte</button>`;
+    authArea.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click', ()=>showAuth(b.dataset.mode)));
+    currentOrders = {};
+    if(userOrdersIndexUnsub){ userOrdersIndexUnsub(); userOrdersIndexUnsub = null; }
+    if(document.getElementById('view-dashboard').classList.contains('active')) showView('home');
+  }
+});
+
+/* ---------------- Image helper: resize + base64 (no Storage, only Realtime DB) ---------------- */
+function fileToCompressedBase64(file, maxWidth=900, quality=0.72){
+  return new Promise((resolve, reject)=>{
+    if(!file){ resolve(null); return; }
+    const reader = new FileReader();
+    reader.onload = (e)=>{
+      const img = new Image();
+      img.onload = ()=>{
+        const scale = Math.min(1, maxWidth / img.width);
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width*scale; canvas.height = img.height*scale;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/* ---------------- Dashboard tabs ---------------- */
+document.querySelectorAll('.dash-tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('.dash-tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.dash-panel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-'+tab.dataset.tab).classList.add('active');
+  });
+});
+
+/* ---------------- Create order ---------------- */
+document.getElementById('btn-create-order').addEventListener('click', async ()=>{
+  const errEl = document.getElementById('order-error'); errEl.classList.remove('show');
+  if(!currentUser){ showAuth('login'); return; }
+  const title = document.getElementById('order-title').value.trim();
+  const desc = document.getElementById('order-desc').value.trim();
+  const fileInput = document.getElementById('order-image');
+  if(!title || !desc){ errEl.textContent = "Merci de remplir le titre et la description."; errEl.classList.add('show'); return; }
+  const btn = document.getElementById('btn-create-order');
+  btn.disabled = true; btn.textContent = "Envoi...";
+  try{
+    const refImage = await fileToCompressedBase64(fileInput.files[0]);
+    const orderRef = push(ref(db, 'orders'));
+    await set(orderRef, {
+      uid: currentUser.uid,
+      userName: currentUser.displayName || currentUser.email,
+      title, description: desc,
+      referenceImage: refImage || null,
+      status: 'pending',
+      createdAt: Date.now()
+    });
+    // index inversé : permet à l'utilisateur de retrouver SES commandes
+    // sans avoir besoin de lire/filtrer tout le noeud /orders (interdit par les règles)
+    await set(ref(db, 'user_orders/'+currentUser.uid+'/'+orderRef.key), true);
+    // premier message auto dans le fil pour donner le contexte
+    await push(ref(db, 'messages/'+orderRef.key), {
+      senderUid: currentUser.uid, senderName: currentUser.displayName || currentUser.email,
+      role: 'client', text: `Nouvelle demande : ${title}`, timestamp: Date.now()
+    });
+    document.getElementById('order-title').value='';
+    document.getElementById('order-desc').value='';
+    fileInput.value='';
+    document.querySelector('.dash-tab[data-tab="orders"]').click();
+  }catch(e){
+    console.error(e);
+    errEl.textContent = "Erreur lors de l'envoi. Réessaie."; errEl.classList.add('show');
+  }finally{
+    btn.disabled=false; btn.textContent="Envoyer ma demande";
+  }
+});
+
+/* ---------------- Orders list ---------------- */
+// On ne peut pas interroger /orders directement (règles = admin uniquement).
+// On lit d'abord la liste des IDs propres à l'utilisateur dans /user_orders/$uid,
+// puis on récupère chaque commande individuellement (autorisé par les règles $orderId).
+function listenMyOrders(uid){
+  if(userOrdersIndexUnsub){ userOrdersIndexUnsub(); userOrdersIndexUnsub = null; }
+  const idxRef = ref(db, 'user_orders/'+uid);
+  userOrdersIndexUnsub = onValue(idxRef, async (snap)=>{
+    const ids = Object.keys(snap.val() || {});
+    if(ids.length === 0){
+      currentOrders = {};
+      renderOrderList();
+      return;
+    }
+    try{
+      const snaps = await Promise.all(ids.map(id => get(ref(db, 'orders/'+id))));
+      const orders = {};
+      snaps.forEach(s => { if(s.exists()) orders[s.key] = s.val(); });
+      currentOrders = orders;
+      renderOrderList();
+    }catch(e){
+      console.error("Erreur chargement commandes:", e);
+    }
+  });
+}
+function statusLabel(s){
+  return {pending:'En attente de prix', priced:'Prix proposé', paid:'Payé', progress:'En cours', done:'Livré'}[s] || s;
+}
+function renderOrderList(){
+  const list = document.getElementById('order-list');
+  const entries = Object.entries(currentOrders).sort((a,b)=>b[1].createdAt-a[1].createdAt);
+  if(entries.length===0){
+    list.innerHTML = `<div class="empty-state">Tu n'as pas encore fait de demande. Rends-toi dans l'onglet "Nouvelle demande" pour commencer.</div>`;
+    return;
+  }
+  list.innerHTML = entries.map(([id,o])=>`
+    <div class="order-card" data-id="${id}">
+      <div class="oc-left">
+        <h4>${escapeHtml(o.title)}</h4>
+        <div class="oc-meta">${new Date(o.createdAt).toLocaleDateString('fr-FR')}</div>
+      </div>
+      <div class="oc-right">
+        ${o.price ? `<span class="price-tag">${o.price} €</span>` : ''}
+        <span class="badge ${o.status==='pending'?'pending':o.status==='priced'?'priced':o.status==='paid'?'paid':o.status==='progress'?'progress':'done'}">${statusLabel(o.status)}</span>
+      </div>
+    </div>`).join('');
+  list.querySelectorAll('.order-card').forEach(card=>{
+    card.addEventListener('click', ()=>openOrderModal(card.dataset.id));
+  });
+}
+
+/* ---------------- Order modal / messaging ---------------- */
+const overlay = document.getElementById('order-modal');
+document.getElementById('modal-close').addEventListener('click', closeOrderModal);
+overlay.addEventListener('click', (e)=>{ if(e.target===overlay) closeOrderModal(); });
+
+function closeOrderModal(){
+  overlay.classList.remove('show');
+  if(messagesUnsub){ messagesUnsub(); messagesUnsub=null; }
+  activeOrderId = null;
+}
+
+function openOrderModal(orderId){
+  activeOrderId = orderId;
+  const o = currentOrders[orderId];
+  document.getElementById('modal-title').textContent = o.title;
+  const badge = document.getElementById('modal-status-badge');
+  badge.textContent = statusLabel(o.status);
+  badge.className = 'badge ' + (o.status==='pending'?'pending':o.status==='priced'?'priced':o.status==='paid'?'paid':o.status==='progress'?'progress':'done');
+  document.getElementById('modal-price').textContent = o.price ? o.price+' €' : '';
+
+  const payBox = document.getElementById('pay-box');
+  if(o.status==='priced' && o.price){
+    payBox.style.display='block';
+    document.getElementById('pay-amount').textContent = o.price + ' €';
+    renderPaypalButton(orderId, o.price);
+  } else {
+    payBox.style.display='none';
+  }
+
+  overlay.classList.add('show');
+  if(messagesUnsub) messagesUnsub();
+  const mRef = ref(db, 'messages/'+orderId);
+  messagesUnsub = onValue(mRef, (snap)=>{
+    const msgs = snap.val() || {};
+    const thread = document.getElementById('thread');
+    thread.innerHTML = Object.values(msgs).sort((a,b)=>a.timestamp-b.timestamp).map(m=>`
+      <div class="msg ${m.role==='client' ? 'me' : 'them'}">
+        ${m.text ? `<div>${escapeHtml(m.text)}</div>` : ''}
+        ${m.imageBase64 ? `<img src="${m.imageBase64}">` : ''}
+        <span class="time">${m.senderName||''} · ${new Date(m.timestamp).toLocaleString('fr-FR')}</span>
+      </div>`).join('');
+    thread.scrollTop = thread.scrollHeight;
+  });
+}
+
+document.getElementById('btn-send-msg').addEventListener('click', sendClientMessage);
+document.getElementById('msg-text').addEventListener('keydown', (e)=>{ if(e.key==='Enter') sendClientMessage(); });
+
+async function sendClientMessage(){
+  if(!activeOrderId || !currentUser) return;
+  const textEl = document.getElementById('msg-text');
+  const imgEl = document.getElementById('msg-image');
+  const text = textEl.value.trim();
+  const file = imgEl.files[0];
+  if(!text && !file) return;
+  const imageBase64 = file ? await fileToCompressedBase64(file) : null;
+  await push(ref(db, 'messages/'+activeOrderId), {
+    senderUid: currentUser.uid, senderName: currentUser.displayName || currentUser.email,
+    role: 'client', text: text || null, imageBase64: imageBase64 || null, timestamp: Date.now()
+  });
+  textEl.value=''; imgEl.value='';
+}
+
+/* ---------------- PayPal (lien PayPal.me, confirmation manuelle) ---------------- */
+function renderPaypalButton(orderId, price){
+  const container = document.getElementById('paypal-btn-container');
+  const link = `https://paypal.me/${PAYPAL_ME_USERNAME}/${price}EUR`;
+  container.innerHTML = `
+    <a href="${link}" target="_blank" rel="noopener" class="btn btn-accent btn-block" id="paypal-me-link">Payer ${price} € avec PayPal</a>
+    <p style="font-size:12px; color:var(--ink-soft); margin:10px 0 0;">Tu seras redirigé vers PayPal pour payer. Une fois le paiement effectué, préviens-nous ici par message : on confirme la réception et on démarre ta miniature.</p>
+    <button class="btn btn-ghost btn-sm btn-block" style="margin-top:8px;" id="btn-notify-paid">J'ai payé, prévenir softkale</button>
+  `;
+  document.getElementById('btn-notify-paid').addEventListener('click', async ()=>{
+    await push(ref(db, 'messages/'+orderId), {
+      senderUid: currentUser.uid, senderName: currentUser.displayName || currentUser.email,
+      role:'client', text:"Je viens d'effectuer le paiement PayPal pour cette commande.", timestamp: Date.now()
+    });
+    alert("Merci, on vérifie la réception du paiement et on revient vers toi rapidement.");
+  });
+}
+
+/* ---------------- Reviews ---------------- */
+document.getElementById('btn-open-review-form').addEventListener('click', ()=>{
+  if(!currentUser){ showAuth('login'); return; }
+  document.getElementById('review-form-card').style.display='block';
+});
+document.getElementById('btn-submit-review').addEventListener('click', async ()=>{
+  const errEl = document.getElementById('review-error'); errEl.classList.remove('show');
+  if(!currentUser){ showAuth('login'); return; }
+  const rating = document.getElementById('review-rating').value;
+  const comment = document.getElementById('review-comment').value.trim();
+  const file = document.getElementById('review-image').files[0];
+  if(!comment){ errEl.textContent="Ajoute un commentaire."; errEl.classList.add('show'); return; }
+  const btn = document.getElementById('btn-submit-review'); btn.disabled=true; btn.textContent='Publication...';
+  try{
+    const imageBase64 = await fileToCompressedBase64(file, 900, 0.75);
+    await push(ref(db, 'reviews'), {
+      uid: currentUser.uid, userName: currentUser.displayName || currentUser.email,
+      rating: Number(rating), comment, thumbnailImage: imageBase64 || null,
+      createdAt: Date.now()
+    });
+    document.getElementById('review-comment').value='';
+    document.getElementById('review-image').value='';
+    document.getElementById('review-form-card').style.display='none';
+  }catch(e){
+    errEl.textContent="Erreur lors de la publication."; errEl.classList.add('show');
+  }finally{
+    btn.disabled=false; btn.textContent='Publier mon avis';
+  }
+});
+
+function renderReviews(reviews){
+  const entries = Object.values(reviews).sort((a,b)=>b.createdAt-a.createdAt);
+  const grid = document.getElementById('reviews-grid');
+  const preview = document.getElementById('home-reviews-preview');
+  if(entries.length===0){
+    grid.innerHTML = `<div class="empty-state">Pas encore d'avis publié.</div>`;
+    preview.innerHTML = '';
+  } else {
+    const cardHtml = (r)=>`
+      <div class="review-card">
+        ${r.thumbnailImage ? `<img src="${r.thumbnailImage}">` : ''}
+        <div class="review-body">
+          <div class="review-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</div>
+          <p>${escapeHtml(r.comment)}</p>
+          <div class="review-author">${escapeHtml(r.userName)}</div>
+        </div>
+      </div>`;
+    grid.innerHTML = entries.map(cardHtml).join('');
+    preview.innerHTML = entries.slice(0,3).map(cardHtml).join('');
+  }
+  document.getElementById('stat-orders').textContent = entries.length > 0 ? entries.length+'+' : '—';
+  if(entries.length){
+    const avg = (entries.reduce((s,r)=>s+r.rating,0)/entries.length).toFixed(1);
+    document.getElementById('stat-rating').textContent = avg+' / 5';
+  }
+}
+onValue(ref(db, 'reviews'), (snap)=>{ renderReviews(snap.val() || {}); });
+
+function escapeHtml(str){
+  const d = document.createElement('div'); d.textContent = str||''; return d.innerHTML;
+}
+</script>
+</body>
+</html>
